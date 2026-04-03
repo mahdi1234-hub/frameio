@@ -529,32 +529,40 @@
       nature: ['#1c1917', '#196127', '#239a3b', '#7bc96f', '#c6e48b']
     };
 
-    // Sample datasets for demo
+    // Sample datasets for demo - using correct Frappe Charts format (type, not chartType)
     const sampleDatasets = {
       sales: {
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
         datasets: [
-          { name: 'Revenue', values: [42, 58, 63, 71, 55, 82, 95, 88, 76, 91, 105, 118], chartType: 'bar' },
-          { name: 'Target', values: [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110], chartType: 'line' }
+          { name: 'Revenue', type: 'bar', values: [42, 58, 63, 71, 55, 82, 95, 88, 76, 91, 105, 118] },
+          { name: 'Target', type: 'line', values: [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110] }
         ]
       },
       traffic: {
         labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
         datasets: [
-          { name: 'Page Views', values: [4500, 5200, 4800, 6100, 5800, 3200, 2800], chartType: 'line' },
-          { name: 'Unique Visitors', values: [2100, 2400, 2200, 2800, 2600, 1500, 1200], chartType: 'line' }
+          { name: 'Page Views', type: 'line', values: [4500, 5200, 4800, 6100, 5800, 3200, 2800] },
+          { name: 'Unique Visitors', type: 'line', values: [2100, 2400, 2200, 2800, 2600, 1500, 1200] }
         ]
       },
-      revenue: {
+      // For pie charts - single dataset with simple values
+      pieData: {
         labels: ['North America', 'Europe', 'Asia Pacific', 'Latin America', 'Other'],
         datasets: [
-          { name: 'Revenue Share', values: [35, 28, 22, 10, 5], chartType: 'bar' }
+          { name: 'Revenue Share', values: [35, 28, 22, 10, 5] }
+        ]
+      },
+      // For percentage charts - single dataset with values that sum to 100
+      percentageData: {
+        labels: ['Product A', 'Product B', 'Product C', 'Services', 'Other'],
+        datasets: [
+          { name: 'Distribution', values: [30, 25, 20, 15, 10] }
         ]
       },
       breakdown: {
         labels: ['Product A', 'Product B', 'Product C', 'Services', 'Other'],
         datasets: [
-          { name: 'Distribution', values: [30, 25, 20, 15, 10], chartType: 'bar' }
+          { name: 'Distribution', type: 'bar', values: [30, 25, 20, 15, 10] }
         ]
       },
       heatmap: {
@@ -747,12 +755,12 @@
       } else if (lowerPrompt.includes('traffic') || lowerPrompt.includes('web')) {
         dataset = sampleDatasets.traffic;
         chartTitle = 'Website Traffic';
-      } else if (lowerPrompt.includes('region') || lowerPrompt.includes('revenue')) {
-        dataset = sampleDatasets.revenue;
+      } else if (lowerPrompt.includes('region') || lowerPrompt.includes('share')) {
+        dataset = sampleDatasets.pieData;
         chartTitle = 'Revenue by Region';
       } else if (lowerPrompt.includes('percent') || lowerPrompt.includes('breakdown')) {
-        dataset = sampleDatasets.breakdown;
-        chartTitle = 'Distribution';
+        dataset = sampleDatasets.percentageData;
+        chartTitle = 'Percentage Breakdown';
       } else if (lowerPrompt.includes('heat') || lowerPrompt.includes('activity')) {
         dataset = sampleDatasets.heatmap;
         chartTitle = 'Activity Heatmap';
