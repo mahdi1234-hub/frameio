@@ -529,20 +529,22 @@
       nature: ['#1c1917', '#196127', '#239a3b', '#7bc96f', '#c6e48b']
     };
 
-    // Sample datasets for demo - using correct Frappe Charts format (type, not chartType)
+    // Sample datasets for demo
+    // For simple charts (bar, line, pie, percentage): don't include 'type' in datasets
+    // For axis-mixed charts: include 'type' in each dataset
     const sampleDatasets = {
       sales: {
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
         datasets: [
-          { name: 'Revenue', type: 'bar', values: [42, 58, 63, 71, 55, 82, 95, 88, 76, 91, 105, 118] },
-          { name: 'Target', type: 'line', values: [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110] }
+          { name: 'Revenue', values: [42, 58, 63, 71, 55, 82, 95, 88, 76, 91, 105, 118] },
+          { name: 'Target', values: [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110] }
         ]
       },
       traffic: {
         labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
         datasets: [
-          { name: 'Page Views', type: 'line', values: [4500, 5200, 4800, 6100, 5800, 3200, 2800] },
-          { name: 'Unique Visitors', type: 'line', values: [2100, 2400, 2200, 2800, 2600, 1500, 1200] }
+          { name: 'Page Views', values: [4500, 5200, 4800, 6100, 5800, 3200, 2800] },
+          { name: 'Unique Visitors', values: [2100, 2400, 2200, 2800, 2600, 1500, 1200] }
         ]
       },
       // For pie charts - single dataset with simple values
@@ -562,7 +564,15 @@
       breakdown: {
         labels: ['Product A', 'Product B', 'Product C', 'Services', 'Other'],
         datasets: [
-          { name: 'Distribution', type: 'bar', values: [30, 25, 20, 15, 10] }
+          { name: 'Distribution', values: [30, 25, 20, 15, 10] }
+        ]
+      },
+      // For mixed charts - include type in each dataset
+      mixed: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [
+          { name: 'Sales', type: 'bar', values: [30, 50, 70, 60, 80, 100] },
+          { name: 'Growth', type: 'line', values: [10, 20, 35, 30, 45, 60] }
         ]
       },
       heatmap: {
@@ -949,16 +959,30 @@
       const container = document.getElementById(containerId);
       if (!container) return;
 
+      // Determine proper chart type
+      let chartType = config.chartType || 'bar';
+      
+      // For mixed charts - use axis-mixed
+      let hasTypeInDatasets = config.data && config.data.datasets && config.data.datasets.some(d => d.type);
+      if (hasTypeInDatasets) {
+        chartType = 'axis-mixed';
+      }
+
       const chartConfig = {
         data: config.data,
         title: config.title,
-        type: config.chartType || 'bar',
+        type: chartType,
         height: config.height || 250,
         colors: config.colors || colorPalettes.warm,
-        barOptions: { spaceRatio: 0.5 },
-        lineOptions: { hideDots: 0, spline: 0 },
-        axisOptions: { xAxisMode: 'tick', yAxisMode: 'span' }
+        barOptions: { spaceRatio: 0.5, barRadius: 4 },
+        lineOptions: { hideDots: 0, spline: 1, hideLine: 0 },
+        axisOptions: { xAxisMode: 'tick', yAxisMode: 'span', xAxisSeries: 1 }
       };
+
+      // For pie/percentage charts, use donut type
+      if (chartType === 'pie' || chartType === 'percentage') {
+        chartConfig.type = 'donut';
+      }
 
       try {
         const chart = new frappe.Chart(container, chartConfig);
