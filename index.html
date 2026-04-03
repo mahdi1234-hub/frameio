@@ -957,36 +957,39 @@
     }
 
     function createFrappeChart(containerId, config) {
-      // Pass selector string to frappe.Chart
-      const selector = '#' + containerId;
+      // Get container element first
+      const container = document.getElementById(containerId);
+      if (!container) {
+        console.error('Container not found:', containerId);
+        return null;
+      }
 
       // Determine proper chart type
       let chartType = config.chartType || 'bar';
       
-      // For mixed charts - use axis-mixed
+      // For mixed charts - use axis-mixed when datasets have individual types
       let hasTypeInDatasets = config.data && config.data.datasets && config.data.datasets.some(d => d.type);
       if (hasTypeInDatasets) {
         chartType = 'axis-mixed';
       }
 
+      // Build chart config matching Frappe docs exactly
       const chartConfig = {
         data: config.data,
-        title: config.title,
+        title: config.title || "",
         type: chartType,
         height: config.height || 250,
-        colors: config.colors || colorPalettes.warm,
+        colors: config.colors || ['#7cd6fd', '#743ee2', '#ff7300', '#ffd600'],
         barOptions: { spaceRatio: 0.5, barRadius: 4 },
-        lineOptions: { hideDots: 0, spline: 1, hideLine: 0 },
-        axisOptions: { xAxisMode: 'tick', yAxisMode: 'span', xAxisSeries: 1 }
+        lineOptions: { hideDots: 0, spline: 1 },
+        axisOptions: { xAxisMode: 'tick', yAxisMode: 'span' }
       };
 
-      // For pie/percentage charts, use donut type
-      if (chartType === 'pie' || chartType === 'percentage') {
-        chartConfig.type = 'donut';
-      }
+      console.log('Creating chart with config:', chartConfig);
 
       try {
-        const chart = new frappe.Chart(selector, chartConfig);
+        // Pass the DOM element, not selector
+        const chart = new frappe.Chart(container, chartConfig);
         charts.push({ id: containerId, chart, config });
         return chart;
       } catch (e) {
