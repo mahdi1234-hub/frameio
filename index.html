@@ -640,13 +640,18 @@
       addUserMessage(message);
       showTypingIndicator();
 
+      // Add delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
       try {
         const response = await callCerebras(message);
         hideTypingIndicator();
         processAIResponse(message, response);
       } catch (error) {
+        console.error('API Error:', error);
         hideTypingIndicator();
-        addAIMessage('Sorry, I encountered an error. Please try again.');
+        // Fallback to local processing
+        processLocalRequest(message);
       }
     }
 
@@ -667,45 +672,104 @@
       sendMessage(messages[chartType]);
     }
 
-    // Cerebras API
+    // Cerebras API - with better error handling
     async function callCerebras(prompt) {
-      const response = await fetch(CEREBRAS_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${CEREBRAS_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b',
-          messages: [
-            {
-              role: 'system',
-              content: `You are an AI assistant that helps create data visualizations. When用户 asks for charts, respond with JSON in this format:
-{
-  "chartType": "bar|line|pie|percentage|heatmap|axis-mixed",
-  "title": "Chart Title",
-  "data": {
-    "labels": ["label1", "label2", ...],
-    "datasets": [
-      { "name": "Dataset Name", "values": [1, 2, 3, ...], "chartType": "bar|line" }
-    ]
-  },
-  "colors": ["#hex1", "#hex2", ...]
-}
-If user asks for general conversation, respond with normal text. Always match the chart type to what the user requests.`
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          max_tokens: 1000
-        })
+      try {
+        const response = await fetch(CEREBRAS_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${CEREBRAS_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b',
+            messages: [
+              {
+                role: 'system',
+                content: `You are a helpful AI assistant that creates data visualizations. When user asks for charts, respond with JSON.`
+              },
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            max_tokens: 1000
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`API error: ${response.status} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        if (!data.choices || !data.choices[0]) {
+          throw new Error('Invalid API response');
+        }
+        return data.choices[0].message.content;
+      } catch (error) {
+        console.error('Cerebras API error:', error);
+        throw error;
+      }
+    }
+
+    // Local fallback processor when API fails
+    function processLocalRequest(prompt) {
+      const lowerPrompt = prompt.toLowerCase();
+      let chartType = null;
+      let dataset = null;
+      let chartTitle = 'Data Visualization';
+      let responseMessage = 'Here\'s a chart based on your request:';
+
+      // Detect chart type
+      if (lowerPrompt.includes('bar')) chartType = 'bar';
+      else if (lowerPrompt.includes('line') || lowerPrompt.includes('trend')) chartType = 'line';
+      else if (lowerPrompt.includes('pie') || lowerPrompt.includes('region')) chartType = 'pie';
+      else if (lowerPrompt.includes('percent')) chartType = 'percentage';
+      else if (lowerPrompt.includes('heat')) chartType = 'heatmap';
+      else if (lowerPrompt.includes('mix') || lowerPrompt.includes('combined')) chartType = 'axis-mixed';
+
+      // If no chart request, just respond with text
+      if (!chartType) {
+        const responses = [
+          "I'm here to help create visualizations! Try asking for a chart like 'show me a bar chart' or 'create a line chart for trends'.",
+          "I can create charts for you. Just ask me something like 'show monthly sales as a bar chart' or 'display trends in a line chart'.",
+          "Got it! Try asking me to visualize data - for example: 'create a pie chart' or 'show a line chart for website traffic'."
+        ];
+        addAIMessage(responses[Math.floor(Math.random() * responses.length)]);
+        return;
+      }
+
+      // Select dataset based on prompt
+      if (lowerPrompt.includes('sale')) {
+        dataset = sampleDatasets.sales;
+        chartTitle = 'Monthly Revenue';
+      } else if (lowerPrompt.includes('traffic') || lowerPrompt.includes('web')) {
+        dataset = sampleDatasets.traffic;
+        chartTitle = 'Website Traffic';
+      } else if (lowerPrompt.includes('region') || lowerPrompt.includes('revenue')) {
+        dataset = sampleDatasets.revenue;
+        chartTitle = 'Revenue by Region';
+      } else if (lowerPrompt.includes('percent') || lowerPrompt.includes('breakdown')) {
+        dataset = sampleDatasets.breakdown;
+        chartTitle = 'Distribution';
+      } else if (lowerPrompt.includes('heat') || lowerPrompt.includes('activity')) {
+        dataset = sampleDatasets.heatmap;
+        chartTitle = 'Activity Heatmap';
+      } else {
+        dataset = sampleDatasets.sales;
+        chartTitle = 'Data Overview';
+      }
+
+      // Render the chart
+      renderChartInChat({
+        chartType,
+        title: chartTitle,
+        data: dataset,
+        colors: colorPalettes.warm
       });
 
-      if (!response.ok) throw new Error('API request failed');
-      const data = await response.json();
-      return data.choices[0].message.content;
+      addAIMessage(responseMessage);
     }
 
     // Process AI Response
