@@ -608,6 +608,29 @@
     document.addEventListener('DOMContentLoaded', () => {
       setupEventListeners();
       setupInputAutogrow();
+      
+      // Test chart on load
+      setTimeout(() => {
+        console.log('Testing frappe chart...');
+        const testContainer = document.getElementById('testChart');
+        if (testContainer && typeof frappe !== 'undefined') {
+          try {
+            new frappe.Chart(testContainer, {
+              data: {
+                labels: ['Jan', 'Feb', 'Mar'],
+                datasets: [{ name: 'Test', values: [10, 20, 30] }]
+              },
+              type: 'bar',
+              height: 200
+            });
+            console.log('Test chart created!');
+          } catch(e) {
+            console.error('Test chart error:', e);
+          }
+        } else {
+          console.log('frappe not found:', typeof frappe);
+        }
+      }, 1000);
     });
 
     function setupEventListeners() {
