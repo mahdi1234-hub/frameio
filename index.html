@@ -956,8 +956,8 @@
     }
 
     function createFrappeChart(containerId, config) {
-      const container = document.getElementById(containerId);
-      if (!container) return;
+      // Pass selector string to frappe.Chart
+      const selector = '#' + containerId;
 
       // Determine proper chart type
       let chartType = config.chartType || 'bar';
@@ -985,7 +985,7 @@
       }
 
       try {
-        const chart = new frappe.Chart(container, chartConfig);
+        const chart = new frappe.Chart(selector, chartConfig);
         charts.push({ id: containerId, chart, config });
         return chart;
       } catch (e) {
